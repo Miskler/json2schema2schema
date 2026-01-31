@@ -1,5 +1,4 @@
-from .property import PropertyComparator
-from .array import ArrayItemsComparator
+from .format import FormatComparator
 from .type import TypeComparator
 
-__all__ = ["PropertyComparator", "ArrayItemsComparator", "TypeComparator"]
+__all__ = ["FormatComparator", "TypeComparator"]
