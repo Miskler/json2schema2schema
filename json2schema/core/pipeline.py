@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-from .comparators.template import Resource, Comparator, ProcessingContext
+from .comparators.template import Resource, Comparator, ProcessingContext, ToDelete
 import logging
 
 logging.basicConfig(level=logging.ERROR)
@@ -103,6 +103,13 @@ class Converter:
                 node.update(g)
             if alts:
                 node.setdefault("anyOf", []).extend(alts)
+        
+        to_delete_keys = []
+        for key, element in node.items():
+            if isinstance(element, ToDelete):
+                to_delete_keys.append(key)
+        for key in to_delete_keys:
+            del node[key]
 
         # если есть anyOf — обработаем каждую альтернативу через _run_level
         if "anyOf" in node:

@@ -3,6 +3,11 @@ from dataclasses import dataclass
 
 
 @dataclass
+class ToDelete:
+    content: int | float | str | list | dict = ""
+    comparator_trigger: "Comparator" = None
+
+@dataclass
 class Resource:
     id: int
     type: str
@@ -14,7 +19,7 @@ class ProcessingContext:
     jsons: List[Resource]
     sealed: bool = False
 
-ComparatorResult = Tuple[Optional[Dict], Optional[List[Dict]]]
+ComparatorResult = Tuple[Optional[Dict[str, ToDelete | Any]], Optional[List[Dict]]]
 
 class Comparator:
     name = "base"

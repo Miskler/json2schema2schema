@@ -1,5 +1,5 @@
 from json2schema.core.pipeline import Converter
-from json2schema.core.comparators import TypeComparator, FormatComparator, RequiredComparator, FlagMaker, EmptyComparator
+from json2schema.core.comparators import TypeComparator, FormatComparator, RequiredComparator, FlagMaker, EmptyComparator, DeleteElement
 import time
 
 cur = time.time()
@@ -21,8 +21,9 @@ conv.add_json({
 conv.register(TypeComparator())
 conv.register(FormatComparator())
 conv.register(RequiredComparator())
-conv.register(FlagMaker())
+#conv.register(FlagMaker())
 conv.register(EmptyComparator())
+conv.register(DeleteElement())
 
 result = conv.run()
 result_time = time.time()

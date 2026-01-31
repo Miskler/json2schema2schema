@@ -1,13 +1,18 @@
 from typing import Dict, List, Optional, Tuple
-from .template import ProcessingContext, Comparator
+from .template import ProcessingContext, Comparator,  ToDelete
 
-class FlagMaker(Comparator):
+class DeleteElement(Comparator):
     """Визуально показывает где именно могут сработать компораторы"""
-    name = "flag"
+    name = "delete-element"
+    attribute = ""
+
+    def __init__(self, attribute: str = "j2sElementTrigger"):
+        super().__init__()
+        self.attribute = attribute
 
     def can_process(self, ctx: ProcessingContext, env: str, node: Dict) -> bool:
         # Обрабатываем объекты и массивы
-        return True
+        return self.attribute in node
 
     def process(
         self,
@@ -15,4 +20,4 @@ class FlagMaker(Comparator):
         env: str,
         node: Dict
     ) -> Tuple[Optional[Dict], Optional[List[Dict]]]:
-        return {"Flag": True}, None
+        return {self.attribute: ToDelete(node.get(self.attribute, -1), self.name)}, None

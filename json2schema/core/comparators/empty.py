@@ -6,6 +6,7 @@ class EmptyComparator(Comparator):
     Добавляет minItems=0 или minProperties=0 для пустых массивов/объектов,
     если на данном уровне нет кандидатов из непустых схем или JSON.
     """
+    name = "empty"
 
     def can_process(self, ctx: ProcessingContext, env: str, node: Dict) -> bool:
         t = node.get("type")
