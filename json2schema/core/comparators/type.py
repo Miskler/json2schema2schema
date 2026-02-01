@@ -23,7 +23,7 @@ def infer_schema_type(s):
 class TypeComparator(Comparator):
     name = "type"
     def can_process(self, ctx: ProcessingContext, env: str, prev_result: dict):
-        return bool(ctx.schemas or ctx.jsons)
+        return "type" not in prev_result and bool(ctx.schemas or ctx.jsons)
     def process(
         self,
         ctx: ProcessingContext,
