@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class NodeKind(Enum):

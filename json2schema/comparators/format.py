@@ -1,8 +1,10 @@
 import re
-from functools import lru_cache
-from typing import Optional, Any, Dict, List
-from .template import Comparator, ProcessingContext
 from collections import defaultdict
+from functools import lru_cache
+from typing import Any, Dict, List, Optional
+
+from .template import Comparator, ProcessingContext
+
 
 class FormatDetector:
     """Глобальный детектор форматов. Расширяем — просто добавляем в _registry."""
@@ -34,6 +36,7 @@ class FormatDetector:
                 return name
         return None
 
+
 class FormatComparator(Comparator):
     name = "format"
 
@@ -42,10 +45,7 @@ class FormatComparator(Comparator):
         return prev_result.get("type") == "string"
 
     def process(
-        self,
-        ctx: ProcessingContext,
-        env: str,
-        prev_result: Dict
+        self, ctx: ProcessingContext, env: str, prev_result: Dict
     ) -> tuple[Optional[Dict], Optional[List[Dict]]]:
 
         # Базовые триггеры из предыдущих компараторов (обычно из TypeComparator)
@@ -76,10 +76,7 @@ class FormatComparator(Comparator):
         for fmt, ids in format_to_ids.items():
             if not ids:
                 continue
-            variant = {
-                "type": "string",
-                "j2sElementTrigger": sorted(ids)
-            }
+            variant = {"type": "string", "j2sElementTrigger": sorted(ids)}
             if fmt is not None:
                 variant["format"] = fmt
             variants.append(variant)

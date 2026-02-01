@@ -1,8 +1,11 @@
 from typing import Dict, List, Optional, Tuple
-from .template import ProcessingContext, Comparator,  ToDelete
+
+from .template import Comparator, ProcessingContext, ToDelete
+
 
 class DeleteElement(Comparator):
     """Визуально показывает где именно могут сработать компораторы"""
+
     name = "delete-element"
     attribute = ""
 
@@ -15,9 +18,6 @@ class DeleteElement(Comparator):
         return self.attribute in node
 
     def process(
-        self,
-        ctx: ProcessingContext,
-        env: str,
-        node: Dict
+        self, ctx: ProcessingContext, env: str, node: Dict
     ) -> Tuple[Optional[Dict], Optional[List[Dict]]]:
         return {self.attribute: ToDelete(node.get(self.attribute, -1), self.name)}, None

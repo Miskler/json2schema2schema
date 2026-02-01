@@ -1,9 +1,9 @@
-from .format import FormatComparator
-from .type import TypeComparator
-from .required import RequiredComparator
-from .flag import FlagMaker
-from .empty import EmptyComparator
 from .delete_element import DeleteElement
+from .empty import EmptyComparator
+from .flag import FlagMaker
+from .format import FormatComparator
+from .required import RequiredComparator
+from .type import TypeComparator
 
 __all__ = [
     "FormatComparator",
@@ -11,5 +11,5 @@ __all__ = [
     "RequiredComparator",
     "FlagMaker",
     "EmptyComparator",
-    "DeleteElement"
+    "DeleteElement",
 ]

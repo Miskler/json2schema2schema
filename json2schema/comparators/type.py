@@ -2,34 +2,44 @@ from .template import Comparator, ProcessingContext
 
 
 def infer_json_type(v):
-    if v is None: return "null"
-    if isinstance(v, bool): return "boolean"
-    if isinstance(v, int): return "integer"
-    if isinstance(v, float): return "number"
-    if isinstance(v, str): return "string"
-    if isinstance(v, list): return "array"
-    if isinstance(v, dict): return "object"
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "boolean"
+    if isinstance(v, int):
+        return "integer"
+    if isinstance(v, float):
+        return "number"
+    if isinstance(v, str):
+        return "string"
+    if isinstance(v, list):
+        return "array"
+    if isinstance(v, dict):
+        return "object"
     return "any"
 
+
 def infer_schema_type(s):
-    if not isinstance(s, dict): return None
+    if not isinstance(s, dict):
+        return None
     if "type" in s:
         t = s["type"]
-        if isinstance(t, str): return t
-    if "properties" in s: return "object"
-    if "items" in s: return "array"
+        if isinstance(t, str):
+            return t
+    if "properties" in s:
+        return "object"
+    if "items" in s:
+        return "array"
     return None
+
 
 class TypeComparator(Comparator):
     name = "type"
+
     def can_process(self, ctx: ProcessingContext, env: str, prev_result: dict):
         return "type" not in prev_result and bool(ctx.schemas or ctx.jsons)
-    def process(
-        self,
-        ctx: ProcessingContext,
-        env: str,
-        prev_result: dict
-    ):
+
+    def process(self, ctx: ProcessingContext, env: str, prev_result: dict):
         type_map = {}
         for s in ctx.schemas:
             t = infer_schema_type(s.content)
@@ -38,8 +48,11 @@ class TypeComparator(Comparator):
         for j in ctx.jsons:
             t = infer_json_type(j.content)
             type_map.setdefault(t, set()).add(j.id)
-        if not type_map: return None, None
-        variants = [{"type": t, "j2sElementTrigger": sorted(list(ids))} for t, ids in type_map.items()]
+        if not type_map:
+            return None, None
+        variants = [
+            {"type": t, "j2sElementTrigger": sorted(list(ids))} for t, ids in type_map.items()
+        ]
         if ctx.sealed:
             # cannot create Of inside sealed context — choose first deterministic
             return variants[0], None

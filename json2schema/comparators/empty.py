@@ -1,5 +1,7 @@
-from typing import Dict, Optional, List, Tuple
-from .template import ProcessingContext, Comparator, Resource
+from typing import Dict, List, Optional, Tuple
+
+from .template import Comparator, ProcessingContext, Resource
+
 
 class EmptyComparator(Comparator):
     """
@@ -7,6 +9,7 @@ class EmptyComparator(Comparator):
     а так же minItems=0 или minProperties=0 для полностью НЕ пустых массивов/объектов,
     если на данном уровне нет кандидатов из непустых схем или JSON.
     """
+
     name = "empty"
 
     def __init__(self, flag_empty: bool = True, flag_non_empty: bool = True):
@@ -18,10 +21,7 @@ class EmptyComparator(Comparator):
         return t == "object" or t == "array"
 
     def process(
-        self,
-        ctx: ProcessingContext,
-        env: str,
-        node: Dict
+        self, ctx: ProcessingContext, env: str, node: Dict
     ) -> Tuple[Optional[Dict], Optional[List[Dict]]]:
 
         # Проверяем есть ли непустые кандидаты на этом уровне

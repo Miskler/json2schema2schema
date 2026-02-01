@@ -1,29 +1,36 @@
-from typing import Any, Dict, List, Optional, Literal
-from .comparators.template import Resource, Comparator, ProcessingContext, ToDelete
-from .comparators import TypeComparator
-from .pseudo_arrays import PseudoArrayHandlerBase
-import logging
 import json
+import logging
+from typing import Dict, List, Literal, Optional
+
+from .comparators import TypeComparator
+from .comparators.template import Comparator, ProcessingContext, Resource, ToDelete
+from .pseudo_arrays import PseudoArrayHandlerBase
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
 class Converter:
-    def __init__(self,
-                 pseudo_handler: Optional[PseudoArrayHandlerBase] = None,
-                 base_of: Literal["anyOf", "oneOf", "allOf"] = "anyOf",
-                 core_comparator: Optional[TypeComparator] = None):
+    def __init__(
+        self,
+        pseudo_handler: Optional[PseudoArrayHandlerBase] = None,
+        base_of: Literal["anyOf", "oneOf", "allOf"] = "anyOf",
+        core_comparator: Optional[TypeComparator] = None,
+    ):
         """
         Конвертер JSON + JSON Schema структур в JSON Schema.
 
-        :param pseudo_handler: Обработчик псевдомассивов (большие словари с одинаковым паттерном значений, а ключами являются индефикаторы).
+        :param pseudo_handler: Обработчик псевдомассивов
+        (большие словари с одинаковым паттерном значений, а ключами являются индефикаторы).
         :type pseudo_handler: Optional[PseudoArrayHandlerBase]
 
-        :param base_of: Базовый оператор объединения схем. Логики определения конкретного типа Of индивидуально не предусмотрено.
+        :param base_of: Базовый оператор объединения схем.
+        Логики определения конкретного типа Of индивидуально не предусмотрено.
         :type base_of: Literal["anyOf", "oneOf", "allOf"]
 
-        :param core_comparator: Базовый компаратор типов. Он вынесен отдельно, так как type - единственное поле без которого Converter не может построить структуру.
+        :param core_comparator: Базовый компаратор типов.
+        Он вынесен отдельно,
+        так как type - единственное поле без которого Converter не может построить структуру.
         :type core_comparator: TypeComparator
         """
         self._schemas: List[Resource] = []
@@ -38,7 +45,7 @@ class Converter:
         if isinstance(s, str):
             with open(s, "r") as f:
                 s = json.loads(f.read())
-        
+
         self._schemas.append(Resource(str(self._id), "schema", s))
         self._id += 1
 
@@ -52,7 +59,10 @@ class Converter:
 
     def register(self, c: Comparator):
         if isinstance(c, TypeComparator):
-            raise UserWarning("TypeComparator-подобный компаратор задается при инициализации в атрибуте core_comparator!")
+            raise UserWarning(
+                "A TypeComparator-like comparator must be provided during initialization "
+                "using the core_comparator attribute."
+            )
         self._comparators.append(c)
 
     # ---------------- utils ----------------
@@ -116,7 +126,9 @@ class Converter:
                     if self._pseudo_handler and self._pseudo_handler.is_pseudo_array(keys, ctx):
                         sorted_keys = sorted(keys, key=lambda k: int(k) if k.isdigit() else -1)
                         for i, k in enumerate(sorted_keys):
-                            item_schemas.append(Resource(f"{s.id}/{i}", "schema", c["properties"][k]))
+                            item_schemas.append(
+                                Resource(f"{s.id}/{i}", "schema", c["properties"][k])
+                            )
                     else:
                         obj_schemas.append(s)
                 else:
@@ -169,7 +181,7 @@ class Converter:
         # Вызов остальных компараторов
         for comp in self._comparators:
             use_comp(comp)
-        
+
         # Удаление атрибутов помеченных на удаление
         to_delete_keys = []
         for key, element in node.items():
@@ -187,7 +199,9 @@ class Converter:
                 processed_alt = self._run_level(alt_ctx, env + f"/{self._base_of}/{idx}", alt)
                 new_of.append(processed_alt)
             node[self._base_of] = new_of
-            logger.debug("Exiting _run_level (%s handled): env=%s, node=%s", self._base_of, env, node)
+            logger.debug(
+                "Exiting _run_level (%s handled): env=%s, node=%s", self._base_of, env, node
+            )
             return node
 
         # recursion based on type
@@ -247,6 +261,6 @@ class Converter:
 
     # ---------------- entry ----------------
 
-    def run(self):
+    def run(self) -> dict:
         ctx = ProcessingContext(self._schemas, self._jsons, sealed=False)
         return self._run_level(ctx, "/", {})
