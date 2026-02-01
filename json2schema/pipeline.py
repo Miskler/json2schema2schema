@@ -3,6 +3,7 @@ from .comparators.template import Resource, Comparator, ProcessingContext, ToDel
 from .comparators import TypeComparator
 from .pseudo_arrays import PseudoArrayHandlerBase
 import logging
+import json
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -33,11 +34,19 @@ class Converter:
         self._pseudo_handler = pseudo_handler
         self._base_of = base_of
 
-    def add_schema(self, s: dict):
+    def add_schema(self, s: dict | str):
+        if isinstance(s, str):
+            with open(s, "r") as f:
+                s = json.loads(f.read())
+        
         self._schemas.append(Resource(str(self._id), "schema", s))
         self._id += 1
 
-    def add_json(self, j: Any):
+    def add_json(self, j: dict | list | str):
+        if isinstance(j, str):
+            with open(j, "r") as f:
+                j = json.loads(f.read())
+
         self._jsons.append(Resource(str(self._id), "json", j))
         self._id += 1
 

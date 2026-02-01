@@ -1,15 +1,12 @@
-from json2schema.core import Converter, PseudoArrayHandler
-from json2schema.core.comparators import TypeComparator, FormatComparator, RequiredComparator, FlagMaker, EmptyComparator, DeleteElement
+from json2schema import Converter, PseudoArrayHandler
+from json2schema.comparators import FormatComparator, RequiredComparator, EmptyComparator, DeleteElement
 import time
 import json
-
-with open("ClassCatalog.tree.json", "r") as f:
-    jsn = json.loads(f.read())
 
 cur = time.time()
 
 conv = Converter(pseudo_handler=PseudoArrayHandler(), base_of="anyOf")
-conv.add_json(jsn)
+conv.add_json("ClassCatalog.tree.json")
 
 
 #conv.add_schema({"type": "object", "properties": {"name": {"type": "object", "properties": {"name": {"type": "integer"}}}}})
@@ -24,6 +21,9 @@ conv.add_json(jsn)
 #    "email": "alice@example.com",
 #    "identifier": "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
 #    "created": "2024-01-31"
+cur = time.time()
+
+
 #})
 #conv.add_json([
 #    #{},  # пустой объект → должен пометиться как empty
@@ -38,7 +38,6 @@ conv.add_json(jsn)
 #conv.register(TypeComparator())
 conv.register(FormatComparator())
 conv.register(RequiredComparator())
-#conv.register(FlagMaker())
 conv.register(EmptyComparator())
 conv.register(DeleteElement())
 conv.register(DeleteElement("isPseudoArray"))
