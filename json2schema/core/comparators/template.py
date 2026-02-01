@@ -1,15 +1,16 @@
-from typing import Dict, List, Any, Optional, Tuple
+# template.py
+from typing import Dict, List, Any, Optional, Tuple, Union
 from dataclasses import dataclass
 
 
 @dataclass
 class ToDelete:
-    content: int | float | str | list | dict = ""
+    content: Union[int, float, str, list, dict] = ""
     comparator_trigger: "Comparator" = None
 
 @dataclass
 class Resource:
-    id: int
+    id: str
     type: str
     content: Any
 
@@ -19,7 +20,7 @@ class ProcessingContext:
     jsons: List[Resource]
     sealed: bool = False
 
-ComparatorResult = Tuple[Optional[Dict[str, ToDelete | Any]], Optional[List[Dict]]]
+ComparatorResult = Tuple[Optional[Dict[str, Union[ToDelete, Any]]], Optional[List[Dict]]]
 
 class Comparator:
     name = "base"

@@ -1,24 +1,27 @@
-from typing import Any, Dict, List
+# pipeline.py
+from typing import Any, Dict, List, Optional, Union
 from .comparators.template import Resource, Comparator, ProcessingContext, ToDelete
+from .pseudo_arrays import PseudoArrayHandlerBase
 import logging
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
 class Converter:
-    def __init__(self):
+    def __init__(self, pseudo_handler: Optional[PseudoArrayHandlerBase] = None):
         self._schemas: List[Resource] = []
         self._jsons: List[Resource] = []
         self._comparators: List[Comparator] = []
         self._id = 0
+        self._pseudo_handler = pseudo_handler
 
     def add_schema(self, s: dict):
-        self._schemas.append(Resource(self._id, "schema", s))
+        self._schemas.append(Resource(str(self._id), "schema", s))
         self._id += 1
 
     def add_json(self, j: Any):
-        self._jsons.append(Resource(self._id, "json", j))
+        self._jsons.append(Resource(str(self._id), "json", j))
         self._id += 1
 
     def register(self, c: Comparator):
@@ -43,11 +46,11 @@ class Converter:
         for s in schemas:
             c = s.content
             if isinstance(c, dict) and prop in c.get("properties", {}):
-                s_out.append(Resource(s.id, "schema", c["properties"][prop]))
+                s_out.append(Resource(f"{s.id}/{prop}", "schema", c["properties"][prop]))
 
         for j in jsons:
             if isinstance(j.content, dict) and prop in j.content:
-                j_out.append(Resource(j.id, "json", j.content[prop]))
+                j_out.append(Resource(f"{j.id}/{prop}", "json", j.content[prop]))
 
         return s_out, j_out
 
@@ -56,9 +59,18 @@ class Converter:
         item_jsons = []
 
         for j in ctx.jsons:
-            if isinstance(j.content, list):
-                for el in j.content:
-                    item_jsons.append(Resource(j.id, "json", el))
+            c = j.content
+            if isinstance(c, list):
+                for i, el in enumerate(c):
+                    item_jsons.append(Resource(f"{j.id}/{i}", "json", el))
+            elif isinstance(c, dict):
+                keys = self._collect_prop_names([], [j])
+                if self._pseudo_handler and self._pseudo_handler.is_pseudo_array(keys, ctx):
+                    sorted_keys = sorted(keys, key=lambda k: int(k) if k.isdigit() else -1)
+                    for i, k in enumerate(sorted_keys):
+                        item_jsons.append(Resource(f"{j.id}/{i}", "json", c[k]))
+                else:
+                    obj_jsons.append(j)
             else:
                 obj_jsons.append(j)
 
@@ -67,12 +79,21 @@ class Converter:
 
         for s in ctx.schemas:
             c = s.content
-            if isinstance(c, dict) and c.get("type") == "array":
-                # schema массива → идёт в items
-                if "items" in c:
-                    item_schemas.append(Resource(s.id, "schema", c["items"]))
+            if isinstance(c, dict):
+                t = c.get("type")
+                if t == "array" and "items" in c:
+                    item_schemas.append(Resource(f"{s.id}/items", "schema", c["items"]))
+                elif t == "object" and "properties" in c:
+                    keys = sorted(c["properties"].keys())
+                    if self._pseudo_handler and self._pseudo_handler.is_pseudo_array(keys, ctx):
+                        sorted_keys = sorted(keys, key=lambda k: int(k) if k.isdigit() else -1)
+                        for i, k in enumerate(sorted_keys):
+                            item_schemas.append(Resource(f"{s.id}/{i}", "schema", c["properties"][k]))
+                    else:
+                        obj_schemas.append(s)
+                else:
+                    obj_schemas.append(s)
             else:
-                # object / scalar schema → ТОЛЬКО в object
                 obj_schemas.append(s)
 
         return (
@@ -115,23 +136,27 @@ class Converter:
         if "anyOf" in node:
             new_anyof = []
             for idx, alt in enumerate(node["anyOf"]):
-                # фильтровать контекст по j2sElementTrigger если он указан в альтернативе
                 alt_ids = set(alt.get("j2sElementTrigger", []))
                 alt_ctx = self._filter_ctx_by_ids(ctx, alt_ids) if alt_ids else ctx
-
-                # запустить альтернативу через тот же pipeline (вызов компараторов и рекурсия)
                 processed_alt = self._run_level(alt_ctx, env + f"/anyOf/{idx}", alt)
                 new_anyof.append(processed_alt)
             node["anyOf"] = new_anyof
             logger.debug("Exiting _run_level (anyOf handled): env=%s, node=%s", env, node)
             return node
 
-        # объект → рекурсивно по свойствам (каждое свойство как отдельный уровень)
+        # recursion based on type
         if node.get("type") == "object":
-            node = self._run_object(ctx, env, node)
+            props = self._collect_prop_names(ctx.schemas, ctx.jsons)
+            if self._pseudo_handler:
+                is_pseudo_array, pattern = self._pseudo_handler.is_pseudo_array(props, ctx)
+            else:
+                is_pseudo_array = False
 
-        # массив → рекурсивно по items (items как отдельный уровень)
-        if node.get("type") == "array":
+            if is_pseudo_array:
+                node = self._run_pseudo_array(ctx, env, node, pattern)
+            else:
+                node = self._run_object(ctx, env, node)
+        elif node.get("type") == "array":
             node = self._run_array(ctx, env, node)
 
         logger.debug("Exiting _run_level: env=%s, node=%s", env, node)
@@ -140,21 +165,34 @@ class Converter:
     # ---------------- object ----------------
 
     def _run_object(self, ctx: ProcessingContext, env: str, node: Dict) -> Dict:
-        node = dict(node)  # копия
+        node = dict(node)
         node.setdefault("properties", {})
 
         props = self._collect_prop_names(ctx.schemas, ctx.jsons)
         for name in props:
             s, j = self._gather_property_candidates(ctx.schemas, ctx.jsons, name)
             sub_ctx = ProcessingContext(s, j, ctx.sealed)
-            # запускаем full pipeline для свойства — компараторы + рекурсия
             node["properties"][name] = self._run_level(
                 sub_ctx, f"{env}/properties/{name}", node["properties"].get(name, {})
             )
 
-        if len(node["properties"]) <= 0:
-            del node["properties"]
+        if not node["properties"]:
+            node.pop("properties", None)
 
+        return node
+
+    # ---------------- pseudo array ----------------
+
+    def _run_pseudo_array(self, ctx: ProcessingContext, env: str, node: Dict, pattern: str) -> Dict:
+        node = dict(node)
+        node["additionalProperties"] = False
+        node.setdefault("patternProperties", {})
+        _, items_ctx = self._split_array_ctx(ctx)
+        node["patternProperties"][pattern] = self._run_level(
+            items_ctx, f"{env}/patternProperties/{pattern}", {}
+        )
+        if not node["patternProperties"]:
+            node.pop("patternProperties", None)
         return node
 
     # ---------------- array ----------------
@@ -163,9 +201,7 @@ class Converter:
         node = dict(node)
         node.setdefault("items", {})
 
-        # используем split для формирования контекста элементов массива
         _, items_ctx = self._split_array_ctx(ctx)
-        # запускаем full pipeline для items
         node["items"] = self._run_level(items_ctx, f"{env}/items", node.get("items", {}))
 
         return node
