@@ -28,13 +28,19 @@ class EmptyComparator(Comparator):
                 return bool(c)  # не пустой список
             return True  # скаляры считаем непустыми
 
-        has_candidates = any(is_nonempty(r) for r in ctx.schemas + ctx.jsons)
+        candidates = (is_nonempty(r) for r in ctx.schemas + ctx.jsons)
 
-        if not has_candidates:
+        if not any(candidates):
             t = node.get("type")
             if t == "object":
-                return {"minProperties": 0}, None
+                return {"maxProperties": 0}, None
             elif t == "array":
-                return {"minItems": 0}, None
+                return {"maxItems": 0}, None
+        elif all(candidates):
+            t = node.get("type")
+            if t == "object":
+                return {"minProperties": 1}, None
+            elif t == "array":
+                return {"minItems": 1}, None
 
         return None, None
