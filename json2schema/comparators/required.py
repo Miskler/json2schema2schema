@@ -29,7 +29,7 @@ class RequiredComparator(Comparator):
         # определяем обязательные: ключи, которые есть во всех JSON
         required = [
             k
-            for k in keys
+            for k in sorted(keys)
             if all(isinstance(j.content, dict) and k in j.content for j in ctx.jsons)
         ]
 
