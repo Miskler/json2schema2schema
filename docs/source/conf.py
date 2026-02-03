@@ -25,13 +25,14 @@ release   = __version__
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx.ext.autodoc.typehints",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "autoapi.extension",
-    "jsonschema_diff.sphinx",
 ]
+
+autodoc_typehints = "description"  # или "signature" / "both" / "none"
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Theme / HTML
