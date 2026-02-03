@@ -13,5 +13,5 @@ __all__ = [
     "FlagMaker",
     "EmptyComparator",
     "NoAdditionalProperties",
-    "DeleteElement"
+    "DeleteElement",
 ]
