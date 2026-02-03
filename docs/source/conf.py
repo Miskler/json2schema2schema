@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))                       # import project without ins
 project   = "genschema"
 author    = "Miskler"
 copyright = "2026, Miskler"
-from jsonschema_diff import __version__
+from genschema import __version__
 release   = __version__
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -88,22 +88,6 @@ autoapi_options = [
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
 }
-
-# ──────────────────────────────────────────────────────────────────────────────
-# jsonschema-diff highlight pipeline (без изменений)
-# ──────────────────────────────────────────────────────────────────────────────
-from jsonschema_diff import ConfigMaker, JsonSchemaDiff
-from jsonschema_diff.color import HighlighterPipeline
-from jsonschema_diff.color.stages import (
-    MonoLinesHighlighter, PathHighlighter, ReplaceGenericHighlighter,
-)
-
-jsonschema_diff = JsonSchemaDiff(
-    config=ConfigMaker.make(),
-    colorize_pipeline=HighlighterPipeline(
-        [MonoLinesHighlighter(), ReplaceGenericHighlighter(), PathHighlighter()],
-    ),
-)
 
 def setup(app):
     app.add_role("pyclass", XRefRole("class"))
