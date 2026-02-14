@@ -70,23 +70,16 @@ def main() -> int:
             missing_keys = sorted(baseline_keys - keys)
             extra_keys = sorted(keys - baseline_keys)
             if missing_keys:
-                mismatches.append(
-                    f"{version} missing datasets: {', '.join(missing_keys)}"
-                )
+                mismatches.append(f"{version} missing datasets: {', '.join(missing_keys)}")
             if extra_keys:
-                mismatches.append(
-                    f"{version} has extra datasets: {', '.join(extra_keys)}"
-                )
+                mismatches.append(f"{version} has extra datasets: {', '.join(extra_keys)}")
 
     for dataset in sorted(baseline_keys):
         base_digest = baseline[dataset]
         for version in versions[1:]:
             digest = digests_by_version[version].get(dataset)
             if digest != base_digest:
-                line = (
-                    f"{dataset}: {baseline_version}={base_digest}, "
-                    f"{version}={digest}"
-                )
+                line = f"{dataset}: {baseline_version}={base_digest}, " f"{version}={digest}"
                 mismatches.append(line)
 
     if mismatches:

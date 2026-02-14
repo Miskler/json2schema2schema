@@ -183,7 +183,6 @@ make docs          # Build documentation
 - **[📖 Full Documentation](https://miskler.github.io/genschema/)**
 - **[🚀 Quick Start Guide](https://miskler.github.io/genschema/basic/quick_start/)**
 - **[🔧 API Reference](https://miskler.github.io/genschema/reference/api/)**
-- **[🆚 Comparison Details](https://miskler.github.io/genschema/advanced/comparison/)**
 
 <div align="center">
 
